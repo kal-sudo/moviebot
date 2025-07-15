@@ -2,97 +2,73 @@ import axios from "axios";
 import { Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
 import dotenv from "dotenv";
-
 dotenv.config();
 
-if (!process.env.omdbkey) {
-  console.error("Error: OMDB_API_KEY is not set in the .env file.");
-  process.exit(1);
+const apiKey = process.env.tmdbkey;
+//tmdb key ko set up karlo env me as tmdbkey:"bbxxxxxxxxxxxxxxxxxxxxxxxxxcad7"
+
+async function fetchHindiHorrorMovies() {
+  try {
+    const response = await axios.get(
+      "https://api.themoviedb.org/3/discover/movie",
+      {
+        params: {
+          api_key: apiKey,
+          with_genres: 28, //yaha pe hamlogo ko genre id daalna hoga
+          language: "hi-IN",
+          sort_by: "popularity.desc",
+          include_adult: false,
+          include_video: false,
+        },
+      }
+    );
+    return response.data.results.slice(0, 5);
+  } catch (error) {
+    console.error("Error fetching horror movies:", error.message);
+    return [];
+  }
 }
-if (!process.env.teletoken) {
-  console.error("Error: TELEGRAM_BOT_TOKEN is not set in the .env file.");
-  process.exit(1);
-}
+
 const bot = new Telegraf(process.env.teletoken);
+
 bot.start((ctx) =>
   ctx.reply(
-    "Hey There!Tell me the name of the movie and I'll tell you everything else!"
+    "Welcome! Give me your interested Genre and I will generate a movie list of top 5 movies for you"
   )
 );
+
 bot.command("quit", async (ctx) => {
   await ctx.leaveChat();
 });
-bot.on(message("text"), async (ctx) => {
-  const user_query = ctx.message.text;
-  try {
-    const omdb_response = await axios.get(process.env.omdbkey, {
-      params: {
-        s: user_query,
-      },
-    });
-    if (omdb_response.data.Response === "True" && omdb_response.data.Search.length > 0) {
-      for (let i = 0; i <= Math.min(2, omdb_response.data.Search.length); i++) {
-        let res = await axios.get(process.env.omdbkey, {
-          params: {
-            i: omdb_response.data.Search[i].imdbID,
-            plot: "full",
-          },
-        });
 
-        if (res.data.Poster != "undefined" && res.data.Poster != "N/A") {
-          try {
-            await axios.head(res.data.Poster, { timeout: 2000 });
-            await ctx.replyWithPhoto(
-              { url: res.data.Poster },
-              {
-                caption:
-                  `Type is: ${
-                    res.data.Type.charAt(0).toUpperCase() +
-                    res.data.Type.slice(1)
-                  }\n` +
-                  `Release Date is: ${res.data.Year}\n` +
-                  `Title is: ${res.data.Title}\n` +
-                  `Runtime (in Mins):${res.data.Runtime}\n` +
-                  `Genre:${res.data.Genre}\n` +
-                  `The Plot For The Movie Is As Follows->${res.data.Plot}\n` +
-                  `Country Of Origin:${res.data.Country}`,
-              }
-            );
-          } catch (urlError) {
-            console.error("URL validation error:", urlError.message);
-            await ctx.reply(
-              `Type is: ${
-                res.data.Type.charAt(0).toUpperCase() + res.data.Type.slice(1)
-              }\n` +
-                `Release Date is: ${res.data.Year}\n` +
-                `Title is: ${res.data.Title}\n` +
-                `Runtime (in Mins):${res.data.Runtime}\n` +
-                `Genre:${res.data.Genre}\n` +
-                `The Plot For The Movie Is As Follows->${res.data.Plot}\n` +
-                `Country Of Origin:${res.data.Country}` +
-                "\nFailed to load poster image."
-            );
-          }
-        } else {
-          ctx.reply(
-            `Type is: ${
-              res.data.Type.charAt(0).toUpperCase() + res.data.Type.slice(1)
-            }\n` +
-              `Release Date is: ${res.data.Year}\n` +
-              `Title is: ${res.data.Title}\n` +
-              `Runtime (in Mins):${res.data.Runtime}\n` +
-              `Genre:${res.data.Genre}\n` +
-              `The Plot For The Movie Is As Follows->${res.data.Plot}\n` +
-              `Country Of Origin:${res.data.Country}`
-          );
-        }
-      }
-    } else {
-      ctx.reply("Not Found.");
+bot.on(message("text"), async (ctx) => {
+  try {
+    let tmdb_response = await fetchHindiHorrorMovies();
+    let attempt = 10;
+    while (tmdb_response.length === 0 && attempt > 0) {
+      tmdb_response = await fetchHindiHorrorMovies();
+      attempt--;
     }
-  } catch (error) {
-    console.error("Error:", error);
-    ctx.reply("Sorry, something went wrong while fetching the movie data.");
+    if (tmdb_response.length === 0) {
+      ctx.reply("Could not fetch movie suggestions right now.");
+      return;
+    }
+    for (const movie of tmdb_response) {
+      ctx.replyWithPhoto(
+        { url: "https://image.tmdb.org/t/p/w500/" + movie.poster_path },
+        {
+          caption: `
+Title: ${movie.original_title}
+Original Language: ${movie.original_language}
+Release Date: ${movie.release_date}
+Rating: ${movie.vote_average}
+                    `,
+        }
+      );
+    }
+  } catch (err) {
+    console.error(err);
+    ctx.reply("Something went wrong. Please try again.");
   }
 });
 
