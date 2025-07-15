@@ -12,6 +12,7 @@ This will install required packages for you.
 - Create a file named ```.env``` in the **root directory** with below contents
 ```
 teletoken="YOUR_TELEGRAM_KEY"
-omdbkey="http://www.omdbapi.com/?apikey=YOUR_API_CODE"  
+omdbkey="http://www.omdbapi.com/?apikey=YOUR_API_CODE"
+tmdbkey="bbxxxxxxxxxxxxxxxxxxxxxxxxxcad7" 
 ```
 Keep in mind that your omdb key should only be the key part, **it must not contain URL**.
