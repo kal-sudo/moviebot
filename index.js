@@ -104,6 +104,7 @@ console.log(ygte,ylte);
 	 const args={
 		  query:{
 			  with_genres:genarg,
+			  include_adult:false,
 			  sort_by:'popularity_desc',
 			  language:'en-US',
 			  'release_date.gte':ygte,
@@ -124,6 +125,7 @@ console.log(ygte,ylte);
                     `Title is: ${recs[i].title}\n`+
                   `The Plot For The Movie Is As Follows->${recs[i].overview}\n`+
                   `Original Language:${recs[i].original_language}\n`+
+		   `is Adult:${recs[i].adult}\n`+
                   `Review Average Is:${recs[i].vote_average} out of ${recs[i].vote_count} reviews.`});    
           }
 		catch{
