@@ -91,13 +91,18 @@ bot.on(message('text'), async (ctx) => {
 		 const pyg=/after \d{4}/;
 	         const pyl=/before \d{4}/;
 	    if(pyg.test(year[i])){
-		    ygte+=`${year[i].slice(6)}/01/01`;
+		    if('2000'>year[i].slice(6)){
+			  ygte+=`${year[i].slice(6)}/01/01`;}
+		    else{ 
+		          ygte+=`${year[i].slice(6)}/01/01`;}
 	    }
 	    if(pyl.test(year[i])){
 		    ylte+=`${year[i].slice(7)}/01/01`;
 	    }
 }
 }
+if(ygte===null || ygte.length===0){
+	ygte='2000/01/01';}
 console.log(ygte,ylte);
   console.log(genarg);
   try{
