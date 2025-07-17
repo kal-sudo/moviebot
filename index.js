@@ -2,10 +2,16 @@ import axios from "axios";
 import { Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
 import dotenv from "dotenv";
+import { truview } from "truview";
 dotenv.config();
 
 const apiKey = process.env.tmdbkey;
 //tmdb key ko set up karlo env me as tmdbkey:"bbxxxxxxxxxxxxxxxxxxxxxxxxxcad7"
+const apiOptions = {
+  serperApiKey: process.env.SERPER_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  result_length: 50, // Set to true to see logs
+};
 
 async function fetchHindiHorrorMovies() {
   try {
@@ -54,6 +60,8 @@ bot.on(message("text"), async (ctx) => {
       return;
     }
     for (const movie of tmdb_response) {
+      const description = await truview(movie.original_title, apiOptions);
+      
       ctx.replyWithPhoto(
         { url: "https://image.tmdb.org/t/p/w500/" + movie.poster_path },
         {
@@ -62,6 +70,8 @@ Title: ${movie.original_title}
 Original Language: ${movie.original_language}
 Release Date: ${movie.release_date}
 Rating: ${movie.vote_average}
+Description: \n
+${description}
                     `,
         }
       );
